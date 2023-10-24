@@ -15,15 +15,21 @@ import lombok.extern.slf4j.Slf4j;
 public class Main {
 
 	public static void main(String[] args) throws IOException {
-		log.info("start");
-		final var counter = new Counter();
-		try (var socket = new ServerSocket(8080)) {
+
+		int port = Integer.parseInt(args[0]);
+		int backlog = Integer.parseInt(args[1]);
+
+		try (var socket = new ServerSocket(port, backlog)) {
 
 			while (true) {
-				final var clientSocket = socket.accept();
-				log.info("accept client");
-				new Thread(new WorkerRunnable(clientSocket, counter)).start();
+//				final var clientSocket = socket.accept();
+//				log.info("{}",counter.increase());
+//				new Thread(new WorkerRunnable(clientSocket, counter)).start();
+				System.out.println(LocalDateTime.now());
+				Thread.sleep(1000L);
 			}
+		} catch (InterruptedException e) {
+			throw new RuntimeException(e);
 		}
 
 
@@ -35,7 +41,7 @@ public class Main {
 
 
 		public synchronized Integer increase() {
-			return count++;
+			return ++count;
 		}
 	}
 
@@ -69,18 +75,22 @@ public class Main {
 				if (req == null || req.equals("") || req.contains("favicon.ico")) {
 					return;
 				}
-				final var increase = counter.increase();
+				final var increase = counter;
 
 				output.write(
 						("HTTP/1.1 200 OK\n\nWorkerRunnable: " +
 								increase + " - " + time + "").getBytes()
 				);
+
+				Thread.sleep(10000L);
 				output.flush();
 				output.close();
 				input.close();
-				log.info("Request processed: {}", increase);
+//				log.info("Request processed: {}", increase);
 			} catch (IOException ex) {
 				throw new RuntimeException(ex);
+			} catch (InterruptedException e) {
+				throw new RuntimeException(e);
 			}
 
 		}

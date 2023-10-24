@@ -1,36 +1,42 @@
 package org.example;
 
+import java.util.Arrays;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import org.springframework.util.StopWatch;
+import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestTemplate;
 
 public class Main {
 
 	public static void main(String[] args) throws InterruptedException {
 
-		ExecutorService es = Executors.newFixedThreadPool(10);
+		int port = Integer.parseInt(args[0]);
+		int thread = Integer.parseInt(args[1]);
+		String url = "http://localhost:" + port;
 
-		RestTemplate rt = new RestTemplate();
-		String url = "http://localhost:8080/hello";
+		ExecutorService es = Executors.newFixedThreadPool(thread);
+		final var a = StringUtils.capitalize("a");
+		RestTemplate restTemplate = new RestTemplate();
 
-		StopWatch main = new StopWatch();
-		main.start();
+		for (int i = 0; i < thread; i++) {
 
-		for (int i = 0; i < 1000; i++) {
+			final int finalI = i;
 			es.execute(() -> {
-				StopWatch sw = new StopWatch();
-				sw.start();
-				rt.getForObject(url, String.class);
-				sw.stop();
+				try {
+					final var forObject = restTemplate.getForObject(url, String.class);
+					System.out.println(forObject);
+
+				} catch (Exception e) {
+					System.out.println(e.getMessage());
+
+				}
 			});
+			Thread.sleep(500L);
 		}
 
 		es.shutdown();
-		// 지정된 시간이 타임아웃 걸리기 전이라면 대기작업이 진행될 때까지 기다린다.
-		// (100초안에 작업이 끝날때까지 기다리거나, 100초가 초과되면 종료)
 		es.awaitTermination(100, TimeUnit.SECONDS);
-		main.stop();
 	}
 }
